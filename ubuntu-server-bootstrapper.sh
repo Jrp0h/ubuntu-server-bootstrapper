@@ -115,7 +115,7 @@ dialog --colors --title "Update system?" --yesno "Do you want to update your sys
 installpkg zip unzip
 
 # Install nginx and postgresql
-installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nodejs npm
+installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nodejs npm openssh-server
 
 dialog --colors --title "Installing..." --infobox "Installing Certbot" 5 70
 add-apt-repository ppa:certbot/certbot >/dev/null 2>&1;

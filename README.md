@@ -37,6 +37,7 @@ Of course more programs and libraries have been install,
 but these are the once that are explicitly downloaded and installed.
 
 * dialog - UI for the script
+* OpenSSH - For remote access
 * nginx - Webserver
 * Postgresql - Database
 * Redis - Cache
