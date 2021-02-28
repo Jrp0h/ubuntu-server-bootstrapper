@@ -16,9 +16,9 @@ On Ubuntu as root, Run:
 ```bash
 wget https://raw.githubusercontent.com/Jrp0h/ubuntu-server-bootstrapper/master/usb.sh
 
-chmod +x ubuntu-server-bootstrapper.sh
+chmod +x usb.sh
 
-./ubuntu-server-bootstrapper.sh
+./usb.sh
 ```
 
 Then just follow the instructions!
