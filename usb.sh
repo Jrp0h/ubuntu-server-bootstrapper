@@ -254,7 +254,7 @@ server {
         fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
     }
 }
-EOF 
+EOF
 
     # move from html to public since laravel uses public
     # but if user is going to use that folderpath
@@ -351,12 +351,6 @@ run_config_certbot() {
     fi
 }
 
-run_clean_up() {
-    if [ "$has_errored" -eq 0 ]; then
-        rm usb.log >/dev/null 2>&1
-    fi
-}
-
 ### Main Program
 
 apt install -y dialog || errorout "Are you root and running on Ubuntu?"
@@ -390,7 +384,5 @@ run_config_pgsql
 run_config_ssh
 run_config_fw
 run_config_certbot
-
-run_clean_up
 
 ui_final

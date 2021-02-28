@@ -14,7 +14,7 @@ but can be used for webservers no-matter language!
 On Ubuntu as root, Run:
 
 ```bash
-wget https://raw.githubusercontent.com/Jrp0h/ubuntu-server-bootstrapper/master/ubuntu-server-bootstrapper.sh
+wget https://raw.githubusercontent.com/Jrp0h/ubuntu-server-bootstrapper/master/usb.sh
 
 chmod +x ubuntu-server-bootstrapper.sh
 
