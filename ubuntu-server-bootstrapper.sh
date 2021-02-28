@@ -144,7 +144,7 @@ installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nod
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
 # curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1
-wget "https://getcomposer.org/installer" -o composer-installer.php
+wget "https://getcomposer.org/installer" -O composer-installer.php
 php composer-installer.php >/dev/null 2>$1
 rm composer-installer.php
 mv composer.phar /usr/local/bin/composer
@@ -169,12 +169,12 @@ server {
 	server_name _;
 	
 	location / {
-		try_files $uri $uri/ /index.php?$query_string;
+		try_files \$uri \$uri/ /index.php?\$query_string;
 	}
 	
 	error_page 404 /index.php;
 	
-	location ~ \.php$ { 
+	location ~ \.php\$ { 
 		include snippets/fastcgi-php.conf;
 		fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
 	}
