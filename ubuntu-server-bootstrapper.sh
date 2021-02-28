@@ -100,13 +100,18 @@ addkeytouser() {
 
 }
 
+cancelscript() {
+    clear
+    exit 1
+}
+
 ### Start of Program ###
 
 # Download dialog to check if they are root
 apt install -y dialog || errorout "Are you root and running on Ubuntu?"
 
 # Welcome user
-dialog --colors --title "Ubuntu Server Bootstrapper" --yes-label "Continue" --no-label "Cancel" --yesno "This script will install and configure NGINX, Postgresql, Redis, Composer, ufw, Certbot(Let's Encrypt), fail2ban and PHP.\nConfigurations are mostly for Laravel.\n\nWARNING:\nIf you are using ssh on something other than port 22, you risk getting booted off!\n\nDo you wish to continue?" 15 70 || clear; exit 1
+dialog --colors --title "Ubuntu Server Bootstrapper" --yes-label "Continue" --no-label "Cancel" --yesno "This script will install and configure NGINX, Postgresql, Redis, Composer, ufw, Certbot(Let's Encrypt), fail2ban and PHP.\nConfigurations are mostly for Laravel.\n\nWARNING:\nIf you are using ssh on something other than port 22, you risk getting booted off!\n\nDo you wish to continue?" 15 70 || cancelscript
 
 # Ask you if they want to update the system
 dialog --colors --title "Update system?" --yesno "Do you want to update your system?" 5 70 && updatesystem
