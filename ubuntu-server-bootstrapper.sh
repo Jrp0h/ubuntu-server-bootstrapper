@@ -143,10 +143,10 @@ installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nod
 
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
-# curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1
-wget "https://getcomposer.org/installer" -O composer-installer.php || errorout "Failed downloading composer-installer"
-php composer-installer.php >/dev/null 2>$1 || errorout "Failed when installing composer"
-rm composer-installer.php
+curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1 || errorout "Failed when installing composer"
+# wget "https://getcomposer.org/installer" -O composer-installer.php || errorout "Failed downloading composer-installer"
+# php composer-installer.php >/dev/null 2>$1 || errorout "Failed when installing composer"
+# rm composer-installer.php
 mv composer.phar /usr/local/bin/composer || errorout "Failed when moving composer"
 chmod +x /usr/local/bin/composer || errorout "Failed when marking composer exacutable"
 
