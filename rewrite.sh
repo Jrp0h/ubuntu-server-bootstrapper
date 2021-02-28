@@ -19,6 +19,8 @@ ssh_reload="1"
 
 has_errored="0"
 
+backtitle="Ubuntu Server Bootstrapper"
+
 ### Functions
 
 ### Helper functions
@@ -28,7 +30,7 @@ log_if_fail() {
     log=$(eval $command 2>&1)
 
     if [ "$?" -ne 0 ]; then
-        has_errored="$?"
+        has_errored="1"
         for message; do true; done
 
         echo "Failed running command: $command" >> usb.log
@@ -62,28 +64,28 @@ installpkg() {
     # but I want to be explicit about what happens
 	for arg in "$@"
 	do
-		dialog --title "Installing..." --infobox "Installing $arg" 5 70
+		dialog --backtitle "$backtitle" --title "Installing..." --infobox "Installing $arg" 5 70
 		log_if_fail apt install -y "$arg" "Failed installing $arg"
 	done
 }
 
 ### Program functions
 ui_welcome() {
-    dialog --colors --title "Ubuntu Server Bootstrapper" --yes-label "Continue" --no-label "Cancel" --yesno "This script will install and configure NGINX, Postgresql, Redis, Composer, ufw, Certbot(Let's Encrypt), fail2ban and PHP.\nConfigurations are mostly for Laravel.\n\nWARNING:\nIf you are using ssh on something other than port 22, you risk getting booted off!\n\nDo you wish to continue?" 15 70 || cancelscript
+    dialog --backtitle "$backtitle" --colors --title "Ubuntu Server Bootstrapper" --yes-label "Continue" --no-label "Cancel" --yesno "This script will install and configure NGINX, Postgresql, Redis, Composer, ufw, Certbot(Let's Encrypt), fail2ban and PHP.\nConfigurations are mostly for Laravel.\n\nWARNING:\nIf you are using ssh on something other than port 22, you risk getting booted off!\n\nDo you wish to continue?" 15 70 || cancelscript
 }
 
 ui_final() {
     if [ "$has_errored" -eq 0 ]; then
-        dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up succesfully! Have fun!" 5 70
+        dialog --backtitle "$backtitle" --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up succesfully! Have fun!" 5 70
     else
-        dialog --colors --title "Done" --ok-label "Exit" --msgbox "Installation has finnished but with some failiures, log can be found at $(pwd)/usb.log!" 10 70
+        dialog --backtitle "$backtitle" --colors --title "Done" --ok-label "Exit" --msgbox "Installation has finnished but with some failiures, log can be found at $(pwd)/usb.log!" 10 70
     fi
 
     cancelscript
 }
 
 ui_update_system() {
-    dialog --colors --title "Update system?" --yesno "Do you want to update your system?" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Update system?" --yesno "Do you want to update your system?" 5 70
     update_system="$?"
 }
 
@@ -94,7 +96,7 @@ ui_run_ssh_keys() {
 
     # See if there are any users available
     if [ $nusers -eq 0 ]; then
-        dialog --title "Something went wrong!" --infobox "There are no users in /home. Aborting!" 15 70
+        dialog --backtitle "$backtitle" --title "Something went wrong!" --infobox "There are no users in /home. Aborting!" 15 70
         sleep 5
         return
     fi
@@ -103,7 +105,7 @@ ui_run_ssh_keys() {
     users=$(ls -la /home | awk '{ print NR-3,$9; }' | tail -n +4 | sed ':a; N; $!ba; s/\n/ /g')
 
     # Get userid
-    userid=$(dialog --colors --title "Which user" --menu "Select user:" 15 30 "$nusers" $users 2>&1 >/dev/tty)
+    userid=$(dialog --backtitle "$backtitle" --colors --title "Which user" --menu "Select user:" 15 30 "$nusers" $users 2>&1 >/dev/tty)
 
     if [ $? -ne 0 ]; then
         return
@@ -112,12 +114,12 @@ ui_run_ssh_keys() {
     #find username from id
     username=$(echo "$users" | awk -v i=$userid '{ pos = i * 2; print $(pos); }')
 
-    url=$(dialog --colors --title "URL to key" --inputbox "URL to Public key:" 5 70 2>&1 >/dev/tty)
+    url=$(dialog --backtitle "$backtitle" --colors --title "URL to key" --inputbox "URL to Public key:" 5 70 2>&1 >/dev/tty)
 
-    dialog --colors --title "Add key?" --yesno "Do you want to add the key from $url to user $username's authorized_keys?" 15 70
+    dialog --backtitle "$backtitle" --colors --title "Add key?" --yesno "Do you want to add the key from $url to user $username's authorized_keys?" 15 70
 
     if [ $? -ne 0 ]; then
-        dialog --colors --title "Another user?" --yesno "Do you want to add another user instead? " 10 70
+        dialog --backtitle "$backtitle" --colors --title "Another user?" --yesno "Do you want to add another user instead? " 10 70
 
         if [ $? -ne 0 ]; then
             return
@@ -125,12 +127,12 @@ ui_run_ssh_keys() {
             addkeytouser
         fi
     else
-		dialog --title "Downloading and adding key" --infobox "Downloading and adding key from $url to user $username's authorized_keys" 15 70
+		dialog --backtitle "$backtitle" --title "Downloading and adding key" --infobox "Downloading and adding key from $url to user $username's authorized_keys" 15 70
 
         log_if_fail wget "$url" -O /tmp/downloaded_public_key "Failed download public key from $url"
 
         if [ $? -ne 0 ]; then
-		    dialog --title "Something went wrong!" --infobox "Something when wrong when downloading public key. Aborting!" 15 70
+		    dialog --backtitle "$backtitle" --title "Something went wrong!" --infobox "Something when wrong when downloading public key. Aborting!" 15 70
             sleep 5
             return
         fi
@@ -145,7 +147,7 @@ ui_run_ssh_keys() {
         chmod 700 "/home/$username/.ssh" >/dev/null 2>&1;
         chmod 600 "/home/$username/.ssh/authorized_keys" >/dev/null 2>&1;
 
-        dialog --colors --title "One more user?" --yesno "Do you want to add a key to one more user?" 10 70
+        dialog --backtitle "$backtitle" --colors --title "One more user?" --yesno "Do you want to add a key to one more user?" 10 70
 
         if [ $? -ne 0 ]; then
             return
@@ -156,29 +158,29 @@ ui_run_ssh_keys() {
 }
 
 ui_reload_ssh() {
-    dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70
     ssh_reload="$?"
 }
 
 ui_fw() {
-    dialog --colors --title "Firewall" --yesno "Allow HTTP?" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Firewall" --yesno "Allow HTTP?" 5 70
     fw_allow_http="$?"
-    dialog --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70
     fw_allow_https="$?"
-    dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70
     fw_enable="$?"
 }
 
 ui_create_certificate() {
-    dialog --colors --title "Create certificate" --yesno "Do you want to create a Let's Encrypt certificate for your website now?" 15 70
+    dialog --backtitle "$backtitle" --colors --title "Create certificate" --yesno "Do you want to create a Let's Encrypt certificate for your website now?" 15 70
 
     if [ "$?" -ne 0 ]; then
-        cert_add="$?"
+        cert_add="1"
         return
     fi
 
-    cert_email=$(dialog --colors --title "Create certificate" --inputbox "Email address:" 5 70 2>&1 >/dev/tty)
-    cert_domains=$(dialog --colors --title "Create certificate" --inputbox "Domains (comma separated):" 15 70 2>&1 >/dev/tty)
+    cert_email=$(dialog --backtitle "$backtitle" --colors --title "Create certificate" --inputbox "Email address:" 5 70 2>&1 >/dev/tty)
+    cert_domains=$(dialog --backtitle "$backtitle" --colors --title "Create certificate" --inputbox "Domains (comma separated):" 15 70 2>&1 >/dev/tty)
     cert_add="0"
 }
 
@@ -187,7 +189,7 @@ run_update() {
         return
     fi
 
-	dialog --title "Updating the system..." --infobox "Updating the system" 5 70
+	dialog --backtitle "$backtitle" --title "Updating the system..." --infobox "Updating the system" 5 70
 	apt update -y >/dev/null 2>&1 || errorout "System update failed"
 	apt upgrade -y >/dev/null 2>&1 || errorout "System upgrade failed"
 }
@@ -201,7 +203,7 @@ run_install_dependencies() {
 }
 
 run_install_composer() {
-    dialog --title "Installing..." --infobox "Installing Composer" 5 70
+    dialog --backtitle "$backtitle" --title "Installing..." --infobox "Installing Composer" 5 70
     log_if_fail "curl -sS https://getcomposer.org/installer | php" "Failed when installing composer"
     log_if_fail mv composer.phar /usr/local/bin/composer "Failed when moving composer"
     log_if_fail chmod +x /usr/local/bin/composer "Failed when marking composer exacutable"
@@ -209,15 +211,15 @@ run_install_composer() {
 
 run_install_certbot() {
     # Uninstalling certbot from apt if it exists
-    dialog --colors --title "Uninstalling..." --infobox "Uninstalling old Certbot (if any exists)" 5 70
-    log_if_fail apt remove certbot "Failed when removing old certbot";
+    dialog --backtitle "$backtitle" --colors --title "Uninstalling..." --infobox "Uninstalling old Certbot (if any exists)" 5 70
+    log_if_fail apt remove certbot -y "Failed when removing old certbot";
 
     # Install snap for certbot
     installpkg snap
     log_if_fail snap install core "Failed when installing core from snap"
     log_if_fail snap refresh core "Failed when refreshing core from snap";
 
-    dialog --colors --title "Installing..." --infobox "Installing Certbot" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Installing..." --infobox "Installing Certbot" 5 70
     log_if_fail snap install --classic certbot "Failed when installing classic certbot from snap"
     if [ -f /usr/bin/certbot ]; then
         log_if_fail rm /usr/bin/certbot "Failed removing already existing /usr/bin/certbot"
@@ -226,9 +228,9 @@ run_install_certbot() {
 }
 
 run_config_nginx() {
-    dialog --title "Configuring..." --infobox "Configuring nginx" 5 70
+    dialog --backtitle "$backtitle" --title "Configuring..." --infobox "Configuring nginx" 5 70
 
-    cat <<EOF > /etc/nginx/sites-available/default
+cat <<EOF > /etc/nginx/sites-available/default
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -257,36 +259,40 @@ EOF
     # move from html to public since laravel uses public
     # but if user is going to use that folderpath
     # and use git, they will probably 
-    log_if_fail mv /var/www/html /var/www/public "Failed moving /var/www/html to /var/www/public"
+    if [ -d /var/www/html ]; then
+        log_if_fail mv /var/www/html /var/www/public "Failed moving /var/www/html to /var/www/public"
+    else 
+        log_if_fail mkdir -p /var/www/public "Failed making directory /var/www/public"
+    fi
 
     # Create a simple php file to validate
     # if the server is up and runing well
-    cat <<EOF > /var/www/public/index.php
+cat <<EOFPHP > /var/www/public/index.php
 <?php
 
 phpinfo();
-EOF
+EOFPHP
 
     log_if_fail chown -R www-data:www-data /var/www "Failed when changing ownership of /var/www"
 
     # Restart NGINX and Postgresql. Enable fail2ban
-    dialog --colors --title "Restarting NGINX" --infobox "Restarting NGINX" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Restarting NGINX" --infobox "Restarting NGINX" 5 70
     log_if_fail systemctl restart nginx "Failed when restarting nginx"
 }
 
 run_config_fail2ban() {
-    dialog --colors --title "Enabling fail2ban" --infobox "Enabling fail2ban" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Enabling fail2ban" --infobox "Enabling fail2ban" 5 70
     log_if_fail systemctl enable fail2ban "Failed enabling fail2ban"
     log_if_fail systemctl start fail2ban "Failed starting fail2ban"
 }
 
 run_config_pgsql() {
-    dialog --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
+    dialog --backtitle "$backtitle" --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
     log_if_fail systemctl restart postgresql "Failed restarting postgresql"
 }
 
 run_config_ssh() {
-    dialog --title "Configuring..." --infobox "Configuring ssh" 5 70
+    dialog --backtitle "$backtitle" --title "Configuring..." --infobox "Configuring ssh" 5 70
     cat <<EOF > /etc/ssh/sshd_config
 Include /etc/ssh/sshd_config.d/*.conf
 PermitRootLogin no
@@ -332,18 +338,16 @@ run_config_fw() {
 }
 
 run_config_certbot() {
-    if [ "$cert_add" -ne 0 ]; then
-        return
-    fi
+    if [ "$cert_add" -eq 0 ]; then
+        dialog --backtitle "$backtitle" --colors --title "Create certificate" --infobox "Registering $domains with email $email" 15 70
+        log_if_fail certbot --nginx --agree-tos -m "$cert_email" -d "$cert_domains" "Failed creating certificate for $domains with email $email"
 
-    dialog --colors --title "Create certificate" --infobox "Registering $domains with email $email" 15 70
-    log_if_fail certbot --nginx --agree-tos -m "$cert_email" -d "$cert_domains" "Failed creating certificate for $domains with email $email"
-
-    if [ $? -ne 0 ]; then
-        dialog --colors --title "Registration failed" --msgbox "Creating certificate failed.\n\nLogs can be found at $(pwd)/certbot.log and $(pwd)/certbot-error.log" 15 70
-    else
-        dialog --colors --title "Registration succeded" --msgbox "Certification has been succesfully completed.\n\nLog can be found at $(pwd)/certbot.log" 15 70
-        rm certbot-error.log 
+        if [ $? -ne 0 ]; then
+            dialog --backtitle "$backtitle" --colors --title "Registration failed" --msgbox "Creating certificate failed.\n\nLogs can be found at $(pwd)/usb.log" 15 70
+        else
+            dialog --backtitle "$backtitle" --colors --title "Registration succeded" --msgbox "Certification has been succesfully completed." 15 70
+            rm certbot-error.log 
+        fi
     fi
 }
 
@@ -360,17 +364,19 @@ apt install -y dialog || errorout "Are you root and running on Ubuntu?"
 ui_welcome
 ui_update_system
 
-dialog --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70
+
+ui_fw
+ui_reload_ssh
+
+dialog --backtitle "$backtitle" --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70
 
 if [ "$?" -eq 0 ]; then 
     ui_run_ssh_keys
 fi
 
-ui_fw
-ui_reload_ssh
 ui_create_certificate
 
-dialog --colors --title "Setup starting" --infobox "Installation and configuration will start shortly, this may take several minutes/hours!" 15 70; sleep 5
+dialog --backtitle "$backtitle" --colors --title "Setup starting" --infobox "Installation and configuration will start shortly, this may take several minutes/hours!" 15 70; sleep 5
 
 run_update
 run_install_main
