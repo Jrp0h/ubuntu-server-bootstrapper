@@ -103,7 +103,7 @@ addkeytouser() {
 
         # Change ownership and permissions incase the folder/file didn't
         # exist before running this program
-        chown -R "$username:$username" "/home/$username/.ssh/authorized_keys" >/dev/null 2>&1;
+        chown -R "$username:$username" "/home/$username/.ssh" >/dev/null 2>&1;
         chmod 700 "/home/$username/.ssh" >/dev/null 2>&1;
         chmod 600 "/home/$username/.ssh/authorized_keys" >/dev/null 2>&1;
 
@@ -143,7 +143,7 @@ installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nod
 
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
-curl -sS https://getcomposer.org/installer | php
+curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1
 mv composer.phar /usr/local/bin/composer
 chmod +x /usr/local/bin/composer
 
@@ -195,11 +195,11 @@ certifywithcertbot
 
 # Configuring ssh and ufw
 dialog --colors --title "Allowing SSH" --infobox "Allowing Post 22 (SSH)" 5 70
-ufw allow ssh
+ufw allow ssh >/dev/null 2>&1;
 sleep 1
 
-dialog --colors --title "Firewall" --yesno "Allow HTTP?" 5 70 &&  ufw allow http
-dialog --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70 &&  ufw allow https
+dialog --colors --title "Firewall" --yesno "Allow HTTP?" 5 70 &&  ufw allow http >/dev/null 2>$1
+dialog --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70 &&  ufw allow https >/dev/null 2>$1
 
 
 dialog --title "Configuring..." --infobox "Configuring nginx" 5 70
@@ -232,14 +232,17 @@ chown -R www-data:www-data /var/www
 
 # Restart NGINX and Postgresql. Enable fail2ban
 dialog --colors --title "Restarting NGINX" --infobox "Restarting NGINX" 5 70
-systemctl restart nginx
+systemctl restart nginx >/dev/null 2>$1
+
 
 dialog --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
-systemctl restart postgresql
+systemctl restart postgresql >/dev/null 2>$1
+
 
 dialog --colors --title "Enabling fail2ban" --infobox "Enabling fail2ban" 5 70
-systemctl enable fail2ban
-systemctl start fail2ban
+systemctl enable fail2ban >/dev/null 2>$1
+systemctl start fail2ban >/dev/null 2>$1
+
 
 # Is this really required?
 dialog --colors --title "Enabling php-redis" --infobox "Enabling php-redis" 5 70
@@ -250,10 +253,10 @@ phpenmod imagick
 dialog --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70 && addkeytouser
 
 # Ask to enable ssh
-dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70 && systemctl restart ssh
+dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70 && systemctl restart ssh >/dev/null 2>$1
 
 # Ask to enable firewall (ufw)
-dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70 && ufw enable
+dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70 && ufw enable >/dev/null 2>$1
 
 dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up now! Have fun\!" 5 70
 clear
