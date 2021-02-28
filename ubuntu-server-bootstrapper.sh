@@ -221,7 +221,7 @@ EOF
 # move from html to public since laravel uses public
 # but if user is going to use that folderpath
 # and use git, they will probably 
-mv -r /var/www/html /var/www/public
+mv /var/www/html /var/www/public >/dev/null 2>$1
 
 # Create a simple php file to validate
 # if the server is up and runing well
@@ -241,7 +241,6 @@ systemctl restart nginx >/dev/null 2>$1
 dialog --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
 systemctl restart postgresql >/dev/null 2>$1
 
-
 dialog --colors --title "Enabling fail2ban" --infobox "Enabling fail2ban" 5 70
 systemctl enable fail2ban >/dev/null 2>$1
 systemctl start fail2ban >/dev/null 2>$1
@@ -250,7 +249,6 @@ systemctl start fail2ban >/dev/null 2>$1
 # Is this really required?
 dialog --colors --title "Enabling php-redis" --infobox "Enabling php-redis" 5 70
 phpenmod redis
-phpenmod imagick
 
 # Ask user if they want to add public keys
 dialog --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70 && addkeytouser
@@ -261,5 +259,5 @@ dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nW
 # Ask to enable firewall (ufw)
 dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70 && yes | ufw enable >/dev/null 2>$1
 
-dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up now! Have fun\!" 5 70
+dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up now! Have fun!" 5 70
 clear
