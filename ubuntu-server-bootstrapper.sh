@@ -144,11 +144,11 @@ installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nod
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
 # curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1
-wget "https://getcomposer.org/installer" -O composer-installer.php
-php composer-installer.php >/dev/null 2>$1
+wget "https://getcomposer.org/installer" -O composer-installer.php || errorout "Failed downloading composer-installer"
+php composer-installer.php >/dev/null 2>$1 || errorout "Failed when installing composer"
 rm composer-installer.php
-mv composer.phar /usr/local/bin/composer
-chmod +x /usr/local/bin/composer
+mv composer.phar /usr/local/bin/composer || errorout "Failed when moving composer"
+chmod +x /usr/local/bin/composer || errorout "Failed when marking composer exacutable"
 
 # installing php dependencies
 installpkg php-fpm php-pgsql php-mbstring php-dom php-redis php-dev php-pear php-gd
@@ -184,26 +184,31 @@ clear
 
 # Uninstalling certbot from apt if it exists
 dialog --colors --title "Uninstalling..." --infobox "Uninstalling old Certbot (if any exists)" 5 70
-apt remove certbot >/dev/null 2>&1;
+apt remove certbot >/dev/null 2>&1 || errorout "Failed when removing old certbot";
 
 # Install snap for certbot
 installpkg snap
-snap install core >/dev/null 2>&1;
-snap refresh core >/dev/null 2>&1;
+snap install core >/dev/null 2>&1 || errorout "Failed when installing core from snap"
+snap refresh core >/dev/null 2>&1 || errorout "Failed when refreshing core from snap";
 
 dialog --colors --title "Installing..." --infobox "Installing Certbot" 5 70
-snap install --classic certbot >/dev/null 2>&1;
-ln -s /snap/bin/certbot /usr/bin/certbot
+snap install --classic certbot >/dev/null 2>&1 || errorout "Failed when installing classic certbot from snap"
+ln -s /snap/bin/certbot /usr/bin/certbot || errorout "Failed when linking certbot"
 certifywithcertbot
 
 # Configuring ssh and ufw
 dialog --colors --title "Allowing SSH" --infobox "Allowing Post 22 (SSH)" 5 70
-ufw allow ssh >/dev/null 2>&1;
+ufw allow ssh >/dev/null 2>&1 || errorout "Failed when allowing ssh";
 sleep 1
 
-dialog --colors --title "Firewall" --yesno "Allow HTTP?" 5 70 &&  ufw allow http >/dev/null 2>$1
+dialog --colors --title "Firewall" --yesno "Allow HTTP?" 5 70
+if [ "$?" -e 0 ]; then 
+    ufw allow http >/dev/null 2>$1 || errorout "Failed when allowing http"
+fi
 dialog --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70 &&  ufw allow https >/dev/null 2>$1
-
+if [ "$?" -e 0 ]; then 
+    ufw allow https >/dev/null 2>$1 || errorout "Failed when allowing https"
+fi
 
 dialog --title "Configuring..." --infobox "Configuring nginx" 5 70
 cat <<EOF > /etc/ssh/sshd_config
@@ -231,33 +236,44 @@ cat <<EOF > /var/www/public/index.php
 phpinfo();
 EOF
 
-chown -R www-data:www-data /var/www
+chown -R www-data:www-data /var/www || errorout "Failed when changing ownership of /var/www"
 
 # Restart NGINX and Postgresql. Enable fail2ban
 dialog --colors --title "Restarting NGINX" --infobox "Restarting NGINX" 5 70
-systemctl restart nginx >/dev/null 2>$1
+systemctl restart nginx >/dev/null 2>$1 || errorout "Failed when restarting nginx"
 
 
 dialog --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
-systemctl restart postgresql >/dev/null 2>$1
+systemctl restart postgresql >/dev/null 2>$1 || errorout "Failed when restarting postgresql"
 
 dialog --colors --title "Enabling fail2ban" --infobox "Enabling fail2ban" 5 70
-systemctl enable fail2ban >/dev/null 2>$1
-systemctl start fail2ban >/dev/null 2>$1
-
+systemctl enable fail2ban >/dev/null 2>$1 || errorout "Failed when enabling fail2ban"
+systemctl start fail2ban >/dev/null 2>$1 || errorout "Failed when starting fail2ban"
 
 # Is this really required?
 dialog --colors --title "Enabling php-redis" --infobox "Enabling php-redis" 5 70
 phpenmod redis
 
 # Ask user if they want to add public keys
-dialog --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70 && addkeytouser
+dialog --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70
+
+if [ "$?" -e 0 ]; then 
+    addkeytouser
+fi
 
 # Ask to enable ssh
-dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70 && systemctl restart ssh >/dev/null 2>$1
+dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70 
+
+if [ "$?" -e 0 ]; then 
+    systemctl restart ssh >/dev/null 2>$1 || errorout "Failed when restarting ssh"
+fi
 
 # Ask to enable firewall (ufw)
-dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70 && yes | ufw enable >/dev/null 2>$1
+dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70
+
+if [ "$?" -e 0 ]; then 
+    yes | ufw enable >/dev/null 2>$1 || errorout "Failed when enabling ufw"
+fi
 
 dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up now! Have fun!" 5 70
 clear
