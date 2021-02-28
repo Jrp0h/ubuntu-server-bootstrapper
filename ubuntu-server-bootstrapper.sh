@@ -55,7 +55,7 @@ addkeytouser() {
     nusers=$(ls -la /home | tail -n +4 | wc -l)
 
     # See if there are any users available
-    if [ $nusers -e 0 ]; then
+    if [ $nusers -eq 0 ]; then
         dialog --title "Something went wrong!" --infobox "There are no users in /home. Aborting!" 15 70
         sleep 5
         return
@@ -143,10 +143,7 @@ installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nod
 
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
-curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1 || errorout "Failed when installing composer"
-# wget "https://getcomposer.org/installer" -O composer-installer.php || errorout "Failed downloading composer-installer"
-# php composer-installer.php >/dev/null 2>$1 || errorout "Failed when installing composer"
-# rm composer-installer.php
+curl -sS https://getcomposer.org/installer | php >/dev/null 2>&1 || errorout "Failed when installing composer"
 mv composer.phar /usr/local/bin/composer || errorout "Failed when moving composer"
 chmod +x /usr/local/bin/composer || errorout "Failed when marking composer exacutable"
 
@@ -193,6 +190,9 @@ snap refresh core >/dev/null 2>&1 || errorout "Failed when refreshing core from 
 
 dialog --colors --title "Installing..." --infobox "Installing Certbot" 5 70
 snap install --classic certbot >/dev/null 2>&1 || errorout "Failed when installing classic certbot from snap"
+if [ -f /usr/bin/certbot ]; then
+    rm /usr/bin/certbot
+fi
 ln -s /snap/bin/certbot /usr/bin/certbot || errorout "Failed when linking certbot"
 certifywithcertbot
 
@@ -202,12 +202,12 @@ ufw allow ssh >/dev/null 2>&1 || errorout "Failed when allowing ssh";
 sleep 1
 
 dialog --colors --title "Firewall" --yesno "Allow HTTP?" 5 70
-if [ "$?" -e 0 ]; then 
-    ufw allow http >/dev/null 2>$1 || errorout "Failed when allowing http"
+if [ "$?" -eq 0 ]; then 
+    ufw allow http >/dev/null 2>&1 || errorout "Failed when allowing http"
 fi
-dialog --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70 &&  ufw allow https >/dev/null 2>$1
-if [ "$?" -e 0 ]; then 
-    ufw allow https >/dev/null 2>$1 || errorout "Failed when allowing https"
+dialog --colors --title "Firewall" --yesno "Allow HTTPS?" 5 70 &&  ufw allow https >/dev/null 2>&1
+if [ "$?" -eq 0 ]; then 
+    ufw allow https >/dev/null 2>&1 || errorout "Failed when allowing https"
 fi
 
 dialog --title "Configuring..." --infobox "Configuring nginx" 5 70
@@ -226,7 +226,7 @@ EOF
 # move from html to public since laravel uses public
 # but if user is going to use that folderpath
 # and use git, they will probably 
-mv /var/www/html /var/www/public >/dev/null 2>$1
+mv /var/www/html /var/www/public >/dev/null 2>&1
 
 # Create a simple php file to validate
 # if the server is up and runing well
@@ -240,15 +240,15 @@ chown -R www-data:www-data /var/www || errorout "Failed when changing ownership 
 
 # Restart NGINX and Postgresql. Enable fail2ban
 dialog --colors --title "Restarting NGINX" --infobox "Restarting NGINX" 5 70
-systemctl restart nginx >/dev/null 2>$1 || errorout "Failed when restarting nginx"
+systemctl restart nginx >/dev/null 2>&1 || errorout "Failed when restarting nginx"
 
 
 dialog --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
-systemctl restart postgresql >/dev/null 2>$1 || errorout "Failed when restarting postgresql"
+systemctl restart postgresql >/dev/null 2>&1 || errorout "Failed when restarting postgresql"
 
 dialog --colors --title "Enabling fail2ban" --infobox "Enabling fail2ban" 5 70
-systemctl enable fail2ban >/dev/null 2>$1 || errorout "Failed when enabling fail2ban"
-systemctl start fail2ban >/dev/null 2>$1 || errorout "Failed when starting fail2ban"
+systemctl enable fail2ban >/dev/null 2>&1 || errorout "Failed when enabling fail2ban"
+systemctl start fail2ban >/dev/null 2>&1 || errorout "Failed when starting fail2ban"
 
 # Is this really required?
 dialog --colors --title "Enabling php-redis" --infobox "Enabling php-redis" 5 70
@@ -257,22 +257,22 @@ phpenmod redis
 # Ask user if they want to add public keys
 dialog --colors --title "Add public key?" --yesno "Do you want to add public keys to users?\n\nWARNING:\nIf you don't do this and don't have a public key already added, you risk getting locked out if you press yes on restarting ssh!\n\nNOTE:\nThey must have a folder in /home and a group with the same name must exist." 15 70
 
-if [ "$?" -e 0 ]; then 
+if [ "$?" -eq 0 ]; then 
     addkeytouser
 fi
 
 # Ask to enable ssh
 dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70 
 
-if [ "$?" -e 0 ]; then 
-    systemctl restart ssh >/dev/null 2>$1 || errorout "Failed when restarting ssh"
+if [ "$?" -eq 0 ]; then 
+    systemctl restart ssh >/dev/null 2>&1 || errorout "Failed when restarting ssh"
 fi
 
 # Ask to enable firewall (ufw)
 dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70
 
-if [ "$?" -e 0 ]; then 
-    yes | ufw enable >/dev/null 2>$1 || errorout "Failed when enabling ufw"
+if [ "$?" -eq 0 ]; then 
+    yes | ufw enable >/dev/null 2>&1 || errorout "Failed when enabling ufw"
 fi
 
 dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up now! Have fun!" 5 70
