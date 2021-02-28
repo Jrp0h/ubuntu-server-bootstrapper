@@ -210,7 +210,7 @@ if [ "$?" -eq 0 ]; then
     ufw allow https >/dev/null 2>&1 || errorout "Failed when allowing https"
 fi
 
-dialog --title "Configuring..." --infobox "Configuring nginx" 5 70
+dialog --title "Configuring..." --infobox "Configuring ssh" 5 70
 cat <<EOF > /etc/ssh/sshd_config
 Include /etc/ssh/sshd_config.d/*.conf
 PermitRootLogin no

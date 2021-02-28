@@ -1,21 +1,35 @@
 #!/usr/bin/bash
 # This is just a little file where i try out some stuff then add them to the main file
+has_errored="0"
 
-certifywithcertbot() {
-    dialog --colors --title "Create certificate" --yesno "Certbot is installed, do you want to create a certificate for your website now?" 15 70 || return
+log_if_fail() {
+    command="${@:1:$#-1}"
 
-    email=$(dialog --colors --title "Create certificate" --inputbox "Email address:" 5 70 2>&1 >/dev/tty)
-    domains=$(dialog --colors --title "Create certificate" --inputbox "Domains (comma separated):" 15 70 2>&1 >/dev/tty)
+    log=$(eval $command 2>&1)
+    # log=$(yes | ufw enable 2>&1)
 
-    dialog --colors --title "Create certificate" --infobox "Registering $domains with email $email" 15 70
-    certbot --nginx --agree-tos -m "$email" -d "$domains" > certbot.log 2> certbot-error.log
 
-    if [ $? -ne 0 ]; then
-        dialog --colors --title "Registration failed" --msgbox "Creating certificate failed.\n\nLogs can be found at $(pwd)/certbot.log and $(pwd)/certbot-error.log" 15 70
-    else
-        dialog --colors --title "Registration succeded" --msgbox "Certification has been succesfully completed.\n\nLog can be found at $(pwd)/certbot.log" 15 70
-        rm certbot-error.log 
+    if [ "$?" -ne 0 ]; then
+        has_errored="$?"
+        for message; do true; done
+
+        echo "Failed running command: $command" >> usb.log
+        echo "$message" >> usb.log
+        echo "--- LOG ---" >> usb.log
+        echo "$log" >> usb.log
+        echo "--- END LOG ---" >> usb.log
+        return 1
     fi
 }
 
-certifywithcertbot
+# yes | ufw enable
+
+# log_if_fail "YEEE" "YEEET"
+
+# log_if_fail ufw allow http "Failed allowing http"
+log_if_fail "yes | ufw enable" "Failed enabling ufw"
+# log_if_fail echo  "Hello" "Failed echoing hello"
+
+if [ "$has_errored" -ne 0 ]; then
+    echo "it has failed somewhere"
+fi
