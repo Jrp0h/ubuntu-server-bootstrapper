@@ -15,8 +15,9 @@ errorout() {
 }
 
 updatesystem() {
-	apt update || errorout "System update failed"
-	apt upgrade || errorout "System upgrade failed"
+	dialog --title "Updating the system..." --infobox "Updating the system" 5 70
+	apt update -y >/dev/null 2>&1 || errorout "System update failed"
+	apt upgrade -y >/dev/null 2>&1 || errorout "System upgrade failed"
 }
 
 installpkg() {
@@ -28,6 +29,24 @@ installpkg() {
 		dialog --title "Installing..." --infobox "Installing $arg" 5 70
 		apt install -y "$arg" >/dev/null 2>&1;
 	done
+}
+
+# create certificate with certbot
+certifywithcertbot() {
+    dialog --colors --title "Create certificate" --yesno "Certbot is installed, do you want to create a certificate for your website now?" 5 70 || return
+
+    email=$(dialog --colors --title "Create certificate" --inputbox "Email address:" 5 70 2>&1 >/dev/tty)
+    domains=$(dialog --colors --title "Create certificate" --inputbox "Domains (comma separated):" 5 70 2>&1 >/dev/tty)
+
+    dialog --colors --title "Create certificate" --infobox "Registering $domains with email $email" 5 70
+    certbot --nginx --agree-tos -m "$email" -d "$domains" > certbot.log 2> certbot-error.log
+
+    if [ $? -ne 0 ]; then
+        dialog --colors --title "Registration failed" --msgbox "Creating certificate failed, log can be found at $(pwd)/certbot(-error).log" 5 70
+    else
+        dialog --colors --title "Registration succeded" --msgbox "Certification has been succesfully completed" 5 70
+        rm certbot-error.log 
+    fi
 }
 
 # Add public key to users 
@@ -122,11 +141,6 @@ installpkg zip unzip
 # Install nginx and postgresql
 installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nodejs npm openssh-server
 
-dialog --colors --title "Installing..." --infobox "Installing Certbot" 5 70
-add-apt-repository ppa:certbot/certbot >/dev/null 2>&1;
-apt update >/dev/null 2>&1;
-apt install -y python-certbot-nginx >/dev/null 2>&1;
-
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
 curl -sS https://getcomposer.org/installer | php
@@ -165,6 +179,21 @@ server {
 EOF
 clear
 
+# Uninstalling certbot from apt if it exists
+dialog --colors --title "Uninstalling..." --infobox "Uninstalling old Certbot (if any exists)" 5 70
+apt remove certbot >/dev/null 2>&1;
+
+# Install snap for certbot
+installpkg snap
+snap install core >/dev/null 2>&1;
+snap refresh core >/dev/null 2>&1;
+
+dialog --colors --title "Installing..." --infobox "Installing Certbot" 5 70
+snap install --classic certbot >/dev/null 2>&1;
+ln -s /snap/bin/certbot /usr/bin/certbot
+certifywithcertbot
+
+# Configuring ssh and ufw
 dialog --colors --title "Allowing SSH" --infobox "Allowing Post 22 (SSH)" 5 70
 ufw allow ssh
 sleep 1

@@ -50,6 +50,7 @@ but these are the once that are explicitly downloaded and installed.
 * PHP - Dependency of composer and laravel
 * zip - Dependency of composer
 * unzip - Dependency of composer
+* snap - Dependency of certbot
 
 ### PHP Extensions
 
