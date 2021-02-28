@@ -143,7 +143,10 @@ installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nod
 
 # Install composer
 dialog --title "Installing..." --infobox "Installing Composer" 5 70
-curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1
+# curl -sS https://getcomposer.org/installer | php >/dev/null 2>$1
+wget "https://getcomposer.org/installer" -o composer-installer.php
+php composer-installer.php >/dev/null 2>$1
+rm composer-installer.php
 mv composer.phar /usr/local/bin/composer
 chmod +x /usr/local/bin/composer
 
@@ -256,7 +259,7 @@ dialog --colors --title "Add public key?" --yesno "Do you want to add public key
 dialog --colors --title "Restart SSH?" --yesno "Do you want to restart ssh?\n\nWARNING:\nIf you haven't copied your public key you WILL get locked out because the current ssh config is not allowing root nor password login!" 5 70 && systemctl restart ssh >/dev/null 2>$1
 
 # Ask to enable firewall (ufw)
-dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70 && ufw enable >/dev/null 2>$1
+dialog --colors --title "Enable Firewall?" --yesno "Do you want to enable ufw(firewall)?\n\nWARNING:\nIf you have changed ssh port from port 22 and didn't restart ssh in the question before, you WILL get booted off!" 5 70 && yes | ufw enable >/dev/null 2>$1
 
 dialog --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up now! Have fun\!" 5 70
 clear
