@@ -71,14 +71,16 @@ installpkg() {
 
 ### Program functions
 ui_welcome() {
-    dialog --backtitle "$backtitle" --colors --title "Ubuntu Server Bootstrapper" --yes-label "Continue" --no-label "Cancel" --yesno "This script will install and configure NGINX, Postgresql, Redis, Composer, ufw, Certbot(Let's Encrypt), fail2ban and PHP.\nConfigurations are mostly for Laravel.\n\nWARNING:\nIf you are using ssh on something other than port 22, you risk getting booted off!\n\nDo you wish to continue?" 15 70 || cancelscript
+    dialog --backtitle "$backtitle" --colors --title "Ubuntu Server Bootstrapper" --yes-label "Continue" --no-label "Cancel" --yesno "This script will install and configure NGINX, MariaDB, Redis, Composer, nodejs, npm, ufw, Certbot(Let's Encrypt), fail2ban and PHP.\nConfigurations are mostly for Laravel.\n\nWARNING:\nIf you are using ssh on something other than port 22, you risk getting booted off!\n\nDo you wish to continue?" 15 70 || cancelscript
 }
 
 ui_final() {
     if [ "$has_errored" -eq 0 ]; then
         dialog --backtitle "$backtitle" --colors --title "Done" --ok-label "Exit" --msgbox "Everything has been installed and set up succesfully! Have fun!" 5 70
+        dialog --backtitle "$backtitle" --colors --title "Final Step" --yesno "Do you want to run mysql_secure_installation now?" && mysql_secure_installation
     else
         dialog --backtitle "$backtitle" --colors --title "Done" --ok-label "Exit" --msgbox "Installation has finnished but with some failiures, log can be found at $(pwd)/usb.log!" 10 70
+        dialog --backtitle "$backtitle" --colors --title "Final Step" --yesno "Do you want to run mysql_secure_installation now?" && mysql_secure_installation
     fi
 
     cancelscript
@@ -195,11 +197,11 @@ run_update() {
 }
 
 run_install_main() {
-    installpkg nginx postgresql postgresql-contrib redis-server ufw fail2ban php nodejs npm openssh-server
+    installpkg nginx mariadb redis-server ufw fail2ban php openssh-server
 }
 
 run_install_dependencies() {
-    installpkg zip unzip php-fpm php-pgsql php-mbstring php-dom php-redis php-dev php-pear php-gd
+    installpkg zip unzip php-fpm php-mysql php-mbstring php-dom php-redis php-dev php-pear php-gd
 }
 
 run_install_composer() {
@@ -225,6 +227,14 @@ run_install_certbot() {
         log_if_fail rm /usr/bin/certbot "Failed removing already existing /usr/bin/certbot"
     fi
     log_if_fail ln -s /snap/bin/certbot /usr/bin/certbot "Failed when linking certbot"
+}
+
+run_install_nodejs() {
+    installpkg nodejs npm
+
+    log_if_fail npm cache clean -f "Failed cleaning npm cache"
+    log_if_fail npm install -g n "Failed installing npm package n"
+    log_if_fail n stable "Failed cleaning npm cache"
 }
 
 run_config_nginx() {
@@ -346,7 +356,6 @@ run_config_certbot() {
             dialog --backtitle "$backtitle" --colors --title "Registration failed" --msgbox "Creating certificate failed.\n\nLogs can be found at $(pwd)/usb.log" 15 70
         else
             dialog --backtitle "$backtitle" --colors --title "Registration succeded" --msgbox "Certification has been succesfully completed." 15 70
-            rm certbot-error.log 
         fi
     fi
 }
@@ -377,6 +386,7 @@ run_install_main
 run_install_dependencies
 run_install_composer
 run_install_certbot
+run_install_nodejs
 
 run_config_nginx
 run_config_fail2ban

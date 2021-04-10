@@ -39,7 +39,7 @@ but these are the once that are explicitly downloaded and installed.
 * dialog - UI for the script
 * OpenSSH - For remote access
 * nginx - Webserver
-* Postgresql - Database
+* MariaDB - Database
 * Redis - Cache
 * ufw - Firewall
 * fail2ban - Security
