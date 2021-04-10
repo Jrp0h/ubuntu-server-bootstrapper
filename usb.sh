@@ -197,7 +197,7 @@ run_update() {
 }
 
 run_install_main() {
-    installpkg nginx mariadb redis-server ufw fail2ban php openssh-server
+    installpkg nginx mariadb-server redis-server ufw fail2ban php openssh-server
 }
 
 run_install_dependencies() {
@@ -285,7 +285,7 @@ EOFPHP
 
     log_if_fail chown -R www-data:www-data /var/www "Failed when changing ownership of /var/www"
 
-    # Restart NGINX and Postgresql. Enable fail2ban
+    # Restart NGINX and MariaDB. Enable fail2ban
     dialog --backtitle "$backtitle" --colors --title "Restarting NGINX" --infobox "Restarting NGINX" 5 70
     log_if_fail systemctl restart nginx "Failed when restarting nginx"
 }
@@ -296,9 +296,9 @@ run_config_fail2ban() {
     log_if_fail systemctl start fail2ban "Failed starting fail2ban"
 }
 
-run_config_pgsql() {
-    dialog --backtitle "$backtitle" --colors --title "Restarting Postgresql" --infobox "Restarting Postgresql" 5 70
-    log_if_fail systemctl restart postgresql "Failed restarting postgresql"
+run_config_mariadb() {
+    dialog --backtitle "$backtitle" --colors --title "Restarting MariaDB" --infobox "Restarting MariaDB" 5 70
+    log_if_fail systemctl restart mariadb "Failed restarting MariaDB"
 }
 
 run_config_ssh() {
@@ -390,7 +390,7 @@ run_install_nodejs
 
 run_config_nginx
 run_config_fail2ban
-run_config_pgsql
+run_config_mariadb
 run_config_ssh
 run_config_fw
 run_config_certbot
